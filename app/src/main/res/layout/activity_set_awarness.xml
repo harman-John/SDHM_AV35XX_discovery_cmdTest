@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Set Awarness:"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="10dp"
+            android:weightSum="10">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Left Awarness"
+                android:layout_weight="3.1"
+                android:padding="10dp"/>
+            <SeekBar
+                android:id="@+id/left_aw_seekbar"
+                android:layout_width="0dp"
+                android:layout_weight="6.9"
+                android:layout_height="wrap_content"
+                android:paddingTop="10dp"
+                android:max="7"
+                />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="10dp"
+            android:weightSum="10">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Right Awarness"
+                android:layout_weight="3.1"
+                android:padding="10dp"/>
+            <SeekBar
+                android:id="@+id/right_aw_seekbar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="6.9"
+                android:paddingTop="10dp"
+                android:max="7"
+                />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</RelativeLayout>

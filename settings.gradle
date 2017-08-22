@@ -1,0 +1,1 @@
+include ':app', ':smartdigitalheadset-new', ':av35xx-Library-r0004'
