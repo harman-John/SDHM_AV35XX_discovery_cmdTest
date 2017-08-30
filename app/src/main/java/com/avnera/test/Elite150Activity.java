@@ -1,4 +1,4 @@
-package com.avnera.smartdigitalheadset.android.example;
+package com.avnera.test;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -26,11 +26,11 @@ import com.avnera.av35xx.GraphicEQPreset;
 import com.avnera.av35xx.Bluetooth;
 import com.avnera.av35xx.BluetoothSocketWrapper;
 import com.avnera.av35xx.Command;
-import com.avnera.av35xx.Debug;
 import com.avnera.av35xx.LightX;
 import com.avnera.av35xx.Log;
 import com.avnera.av35xx.ModuleId;
 import com.avnera.av35xx.Utility;
+import com.avnera.test.R;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -146,11 +146,11 @@ public class Elite150Activity extends AppCompatActivity implements
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     if (mLightX != null){
-                        FunctionTestAV35.getInstance().goFunction(mLightX,position);
+                        FunctionTestAV35.getInstance().goFunction(position);
                     }
             }
         });
-        listView.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_expandable_list_item_1, FunctionTestAV35.getInstance().initFunctionList()));
+//        listView.setAdapter(new ArrayAdapter<String>(this, R.layout.listview_item, );
         listView.setVisibility(View.GONE);
         mButtonQuit = (Button) findViewById( R.id.buttonQuit );
         writeFirmwareButton = (Button) findViewById( R.id.write_firmware_elite );
@@ -395,7 +395,7 @@ public class Elite150Activity extends AppCompatActivity implements
 //		}
     }
 
-    private static final String[] devicesMac = {"98:5D:AD:11:DF:4C","B0:91:22:B1:46:97"};
+    private static final String[] devicesMac = {"98:5D:AD:11:DF:4C","B0:91:22:B1:46:97","B0:91:22:B2:92:01"};
     private static String connectedMac = null;
     @Override
     public void bluetoothDeviceDiscovered( Bluetooth bluetooth, BluetoothDevice bluetoothDevice ) {
@@ -406,8 +406,14 @@ public class Elite150Activity extends AppCompatActivity implements
 //        final String				kAvneraHardwareAddress = "98:5D:AD:12:28:B6";
         Log.d("Elite150Activity Callback DISCOVERY =====> Name ="+bluetoothDevice.getName()+",addr = "+bluetoothDevice.getAddress());
         // TODO: write device-selection UI
-        if ( bluetoothDevice.getAddress().toUpperCase().equals( devicesMac[0] )
-                ||bluetoothDevice.getAddress().toUpperCase().equals( devicesMac[1] )) {
+//        boolean found = false;
+//        String mac = bluetoothDevice.getAddress().toUpperCase();
+//        for (int i =0;i< devicesMac.length;i++){
+//            if (mac.equals(devicesMac[i])){
+//                found = true;
+//            }
+//        }
+//        if ( found) {
             name = bluetooth.deviceName( bluetoothDevice );
 
             this.runOnUiThread(new Runnable() {
@@ -429,7 +435,7 @@ public class Elite150Activity extends AppCompatActivity implements
                     bluetooth.pair( bluetoothDevice );
                 } break;
             }
-        }
+//        }
     }
 
     @Override
@@ -447,29 +453,36 @@ public class Elite150Activity extends AppCompatActivity implements
             }
         });
     }
+    String buf = "";
     @Override
-    public void lightXAppReadResult( LightX lightX, Command command, boolean success, byte[] buffer ) {
+    public void lightXAppReadResult( LightX lightX, final Command command, final boolean success, final byte[] buffer ) {
         boolean						boolValue;
         int							i, intValue, offset;
         final long						unsignedIntValue;
-        Log.d("Elite150Activity Callback lightXAppReadResult ************* ");
+        Log.d("Elite150Activity Callback lightXAppReadResult cmdid: "+command.value()+","+success);
+
+        if (buffer != null){
+            buf = HexHelper.byteToArray(buffer);
+        }
+
         if ( success ) {
             switch ( command ) {
                 case AppANCEnable: {
                     if ( mANCEnableDemoState > 0 ) {
                         // only do this if running ANC-enable demo
                         mANCEnabled = Utility.getBoolean( buffer, 0 );
-                        this.runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                ancValue.setText(" "+mANCEnabled);
-                            }
-                        });
-                        advanceANCEnableDemo();
+//                        this.runOnUiThread(new Runnable() {
+//                            @Override
+//                            public void run() {
+//                                ancValue.setText(" "+mANCEnabled);
+//                            }
+//                        });
+//                        advanceANCEnableDemo();
+
+                        showDialog(command.value(),success,String.valueOf(mANCEnabled));
                     }
 
                 } // fall through
-
                 // of course we could cache all of these as member variables too...
                 case AppIsHeadsetOn:
                 case AppOnEarDetectionWithAutoOff:
@@ -477,36 +490,38 @@ public class Elite150Activity extends AppCompatActivity implements
                 case AppVoicePromptEnable:
                 {
                     final boolean boolValue1 = Utility.getBoolean( buffer, 0 );
-                    Log.d( command + " is " + ( boolValue1 ? "enabled" : "disabled" ) );
-                    this.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            ancValue.setText(" "+ (boolValue1 ? "enabled" : "disabled") );
-                        }
-                    });
+//                    Log.d( command + " is " + ( boolValue1 ? "enabled" : "disabled" ) );
+//                    this.runOnUiThread(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            ancValue.setText(" "+ (boolValue1 ? "enabled" : "disabled") );
+//                        }
+//                    });
+
+                    showDialog(command.value(),success,String.valueOf(boolValue1));
                 } break;
 
                 case AppANCAwarenessPreset: {
                     intValue = Utility.getInt( buffer, 0 );
                     Log.d( command + " is " + ANCAwarenessPreset.from( intValue ) );
-
+                    String ancvalue = "";
                     switch (intValue) {
                         case 0:
-                            updateView(defaultANCValue, "NONE");
+                            ancvalue = "NONE";
                             break;
                         case 1: //ANCAwarenessPreset.Low
-                            updateView(defaultANCValue, "LOW");
-
+                            ancvalue = "LOW";
                             break;
                         case 2: //ANCAwarenessPreset.Medium
-                            updateView(defaultANCValue, "MEDIUM");
-
+                            ancvalue = "MEDIUM";
                             break;
                         case 3://ANCAwarenessPreset.High
-                            updateView(defaultANCValue, "HIGH");
-
+                            ancvalue = "HIGH";
                             break;
                     }
+
+                    updateView(defaultANCValue, "ancvalue");
+                    showDialog(command.value(),success,ancvalue);
                 }
 
                 break;
@@ -514,6 +529,7 @@ public class Elite150Activity extends AppCompatActivity implements
                 case AppAudioEQPreset: {
                     intValue = Utility.getInt( buffer, 0 );
                     Log.d( command + " is " + GraphicEQPreset.from( intValue ) );
+                    showDialog(command.value(),success,String.valueOf(intValue));
                 } break;
 
                 case AppAwarenessRawLeft:
@@ -525,6 +541,7 @@ public class Elite150Activity extends AppCompatActivity implements
                             leftAwarnessValue.setText(" "+leftVal);
                         }
                     });
+                    showDialog(command.value(),success,String.valueOf(unsignedIntValue));
                     break;
                 case AppAwarenessRawRight:
                     unsignedIntValue = Utility.getUnsignedInt( buffer, 0 );
@@ -536,6 +553,7 @@ public class Elite150Activity extends AppCompatActivity implements
                             rightAwarnessValue.setText(""+rightVal);
                         }
                     });
+                    showDialog(command.value(),success,String.valueOf(unsignedIntValue));
                     break;
                 case AppAwarenessRawSteps:
                     unsignedIntValue = Utility.getUnsignedInt( buffer, 0 );
@@ -547,27 +565,28 @@ public class Elite150Activity extends AppCompatActivity implements
                             rawAwarnessValue.setText(""+rawVal);
                         }
                     });
+                    showDialog(command.value(),success,String.valueOf(unsignedIntValue));
                     break;
                 case AppGraphicEQCurrentPreset:
                 {
                     unsignedIntValue = Utility.getUnsignedInt( buffer, 0 );
                     Log.d( command + " is " + unsignedIntValue );
-
+                    String eqvalue = "OFF";
                     switch ((int) unsignedIntValue) {
                         case 0:
-                            updateView(txtCurrentEQ, "OFF" );
+                            eqvalue = "OFF";
                             break;
                         case 1:
-                            updateView(txtCurrentEQ, "JAZZ" );
+                            eqvalue = "JAZZ";
                             break;
                         case 2:
-                            updateView(txtCurrentEQ, "VOCAL" );
+                            eqvalue = "VOCAL";
                             break;
                         case 3:
-                            updateView(txtCurrentEQ, "BASS" );
+                            eqvalue = "BASS";
                             break;
                         case 4:
-                            updateView(txtCurrentEQ, "CUSTOM EQ IS PRESENT" );
+                            eqvalue = "CUSTOM EQ IS PRESENT";
 //							String name = JBLPreferenceUtil.getString(EQSettingManager.EQKeyNAME, getActivity(), null);
 //							if (name != null) {
 //								txtCurrentEQ.setText(name);
@@ -579,6 +598,8 @@ public class Elite150Activity extends AppCompatActivity implements
                             break;
                     }
 
+                    updateView(txtCurrentEQ, "eqvalue" );
+                    showDialog(command.value(),success,eqvalue);
 
                 } break;
 
@@ -593,6 +614,7 @@ public class Elite150Activity extends AppCompatActivity implements
 
                         }
                     });
+                    showDialog(command.value(),success,String.valueOf(unsignedIntValue)+"%");
 
                 } break;
 
@@ -607,6 +629,7 @@ public class Elite150Activity extends AppCompatActivity implements
                         }
                     });
                     Log.d( String.format( "App firmware version is %d.%d.%d", major, minor, revision ) );
+                    showDialog(command.value(),success,String.format( "App firmware version is %d.%d.%d", major, minor, revision ) );
                 } break;
 
                 case AppGraphicEQBand: {
@@ -615,6 +638,7 @@ public class Elite150Activity extends AppCompatActivity implements
                     int				value = Utility.getInt( buffer, 8 );
 
                     Log.d( String.format( "graphic eq preset %d, band: %d value: %d", preset, band, value ) );
+                    showDialog(command.value(),success,String.format( "graphic eq preset %d, band: %d value: %d", preset, band, value ));
                 } break;
 
                 case AppGraphicEQBandFreq: {
@@ -623,6 +647,7 @@ public class Elite150Activity extends AppCompatActivity implements
                     for ( i = 0, offset = kSizeofUInt32; i < numBands; ++i, offset += kSizeofUInt32 ) {
                         long unsignedIntValue1 = Utility.getUnsignedInt( buffer, offset );
                         Log.d( String.format( "graphic eq band freq %d: %d", i, unsignedIntValue1 ) );
+                        showDialog(command.value(),success,String.format( "graphic eq band freq %d: %d", i, unsignedIntValue1 ));
                     }
                 } break;
 
@@ -634,7 +659,8 @@ public class Elite150Activity extends AppCompatActivity implements
 
                     Log.d( String.format( "graphic eq limits, num bands: %d, num settings: %d, settings min: %d, settings max: %d", mGraphicEQLimitNumBands, mGraphicEQLimitNumSettings, mGraphicEQLimitSettingsMin, mGraphicEQLimitSettingsMax ) );
 
-                    getGraphicEQValues();
+//                    getGraphicEQValues();
+                    showDialog(command.value(),success,String.format( "graphic eq limits, num bands: %d, num settings: %d, settings min: %d, settings max: %d", mGraphicEQLimitNumBands, mGraphicEQLimitNumSettings, mGraphicEQLimitSettingsMin, mGraphicEQLimitSettingsMax ));
                 } break;
 
                 case AppGraphicEQPresetBandSettings: {
@@ -644,6 +670,7 @@ public class Elite150Activity extends AppCompatActivity implements
                     for ( i = 0, offset = 2 * kSizeofUInt32; i < numBands; ++i, offset += kSizeofUInt32 ) {
                         long unsignedIntValue2 = Utility.getUnsignedInt( buffer, offset );
                         Log.d( String.format( "graphic eq preset %d band %d setting: %d", preset, i, unsignedIntValue2 ) );
+                        showDialog(command.value(),success,String.format( "graphic eq preset %d band %d setting: %d", preset, i, unsignedIntValue2 ) );
                     }
                 } break;
 
@@ -665,6 +692,7 @@ public class Elite150Activity extends AppCompatActivity implements
 
                 default: {
                     Log.d("Elite150Activity received reply to " + command + " command" );
+                    showDialog(command.value(),success,(buffer == null ? "null " : HexHelper.encodeHexStr(buffer)));
                 } break;
             }
         } else {
@@ -676,7 +704,48 @@ public class Elite150Activity extends AppCompatActivity implements
 //					boolean anc = Utility.getBoolean(buffer, 0);
             }
             Log.e("Elite150Activity " + "read command " + command + " failed" );
+            showDialog(command.value(),success,(buffer == null ? "null " : HexHelper.encodeHexStr(buffer)));
         }
+
+
+    }
+
+    private void showDialog(final int commandid, final String success, final String buffer){
+        this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                new AlertDialog.Builder(Elite150Activity.this)
+                        .setTitle("Read Test Result")
+                        .setMessage("CmdId: " + commandid+ " \n"
+                                + "Result: " + success + " \n"
+                                + "Value: " + buffer + " \n")
+                        .setPositiveButton("Back", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog,
+                                                int whichButton) {
+                                dialog.dismiss();
+                            }
+                        }).create().show();
+            }
+        });
+    }
+
+    private void showDialog(final int commandid, final boolean success, final String buffer){
+        this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                new AlertDialog.Builder(Elite150Activity.this)
+                        .setTitle("Read Test Result")
+                        .setMessage("CmdId: " + commandid+ " \n"
+                                + "Result: " + (success ? "READ SUCCESS" : "READ FAILED")+ " \n"
+                                + "Value: " + buffer + " \n")
+                        .setPositiveButton("Back", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog,
+                                                int whichButton) {
+                                dialog.dismiss();
+                            }
+                        }).create().show();
+            }
+        });
     }
 
     public void AncOff(View view){
@@ -936,22 +1005,22 @@ public class Elite150Activity extends AppCompatActivity implements
     }
 
     @Override
-    public void lightXAppWriteResult( LightX lightX, Command command, boolean success ) {
+    public void lightXAppWriteResult( LightX lightX, final Command command, final boolean success ) {
         Log.d("Elite150Activity Callback lightXAppWriteResult ************* " + command + " command " + ( success ? "succeeded" : "failed" ) );
-
-        if ( success ) {
-            switch ( command ) {
-                case AppANCAwarenessPreset: {
-                    // confirm the value written with a read
-                    mLightX.readAppANCAwarenessPreset();
-                } break;
-
-                case AppGraphicEQBand: {
-                    // see call to writeAppGraphicEQBand below
-                    mLightX.readAppGraphicEQBand( GraphicEQPreset.User, 1 );
-                } break;
-            }
-        }
+        showDialog(command.value(),( success == true ? "WRITE SUCCESS" : "WRITE FAIL"),"null");
+//        if ( success ) {
+//            switch ( command ) {
+//                case AppANCAwarenessPreset: {
+//                    // confirm the value written with a read
+//                    mLightX.readAppANCAwarenessPreset();
+//                } break;
+//
+//                case AppGraphicEQBand: {
+//                    // see call to writeAppGraphicEQBand below
+//                    mLightX.readAppGraphicEQBand( GraphicEQPreset.User, 1 );
+//                } break;
+//            }
+//        }
     }
 
     @Override
@@ -966,6 +1035,7 @@ public class Elite150Activity extends AppCompatActivity implements
     public void lightXError( LightX lightX, Exception exception ) {
         Log.i("Elite150Activity Callback lightXError  ************* Error :" + exception.getLocalizedMessage() );
         updateView(mHeadphoneConnected, "Light X Error, Elite 150");
+        showDialog(0,false,"Light X Error,Device Disconnected");
         try {
 
 //            mBluetooth.close();
@@ -992,20 +1062,20 @@ public class Elite150Activity extends AppCompatActivity implements
 
     @Override
     public boolean lightXFirmwareReadStatus( LightX lightX, LightX.FirmwareRegion region, int offset, byte[] buffer, Exception e ) {
-        int i, n;
+//        int i, n;
         Log.i("Elite150Activity Callback lightXFirmwareReadStatus *************");
-        for ( i = 0, n = buffer.length; i < n; ++i, ++offset, ++mFirmwareBytesVerified ) {
-            if ( buffer[ i ] != mFirmwareData[ offset ] ) {
-                Log.e("Elite150Activity " + "verification failed at offset " + offset );
-                return true;
-            }
-        }
-
-        if ( mFirmwareBytesVerified == mFirmwareData.length ) {
-            Log.d("Elite150Activity firmware region " + region + " verified 100% ok" );
-        } else {
-            Log.d( String.format( "firmware region verified %.02f%% ok", (double) mFirmwareBytesVerified / (double) mFirmwareData.length * 100.0 ) );
-        }
+//        for ( i = 0, n = buffer.length; i < n; ++i, ++offset, ++mFirmwareBytesVerified ) {
+//            if ( buffer[ i ] != mFirmwareData[ offset ] ) {
+//                Log.e("Elite150Activity " + "verification failed at offset " + offset );
+//                return true;
+//            }
+//        }
+//
+//        if ( mFirmwareBytesVerified == mFirmwareData.length ) {
+//            Log.d("Elite150Activity firmware region " + region + " verified 100% ok" );
+//        } else {
+//            Log.d( String.format( "firmware region verified %.02f%% ok", (double) mFirmwareBytesVerified / (double) mFirmwareData.length * 100.0 ) );
+//        }
 
         return false;
     }
@@ -1125,32 +1195,32 @@ public class Elite150Activity extends AppCompatActivity implements
     public void lightXIsInBootloader( LightX lightX, boolean isInBootloader ) {
         Log.d("Elite150Activity Callback lightXIsInBootloader ************* bootloader: " + isInBootloader );
 
-        if ( isInBootloader ) {
-            this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Log.d("Elite150Activity HARMAN_TAG lightXIsInBootloader() --> Writing Firmware"  );
-                    startWritingFirmware(3);
-                }
-            });
-//			doSomethingWhileInBootloaderMode();
-        } else {
-            if (mLightX != null) {
-                mLightX.enterBootloader();
-//            lightX.enterApplication();
-                mLightX.readBootImageType();
-            }
-        }
+//        if ( isInBootloader ) {
+//            this.runOnUiThread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    Log.d("Elite150Activity HARMAN_TAG lightXIsInBootloader() --> Writing Firmware"  );
+//                    startWritingFirmware(3);
+//                }
+//            });
+////			doSomethingWhileInBootloaderMode();
+//        } else {
+//            if (mLightX != null) {
+//                mLightX.enterBootloader();
+////            lightX.enterApplication();
+//                mLightX.readBootImageType();
+//            }
+//        }
     }
 
     @Override
     public void lightXReadConfigResult(LightX lightX, Command command, boolean success, String value ) {
         Log.d("Elite150Activity Callback lightXReadConfigResult *************");
-        if ( success ) {
-            Log.d("Elite150Activity config string for " + command + ": " + value );
-        } else {
-            Log.e("Elite150Activity " + "failed to read config for " + command );
-        }
+//        if ( success ) {
+//            Log.d("Elite150Activity config string for " + command + ": " + value );
+//        } else {
+//            Log.e("Elite150Activity " + "failed to read config for " + command );
+//        }
     }
 
     // Examples of things you can do once connected:
@@ -1202,44 +1272,44 @@ public class Elite150Activity extends AppCompatActivity implements
     // Here are examples of how to read and write firmware regions.  The LightX hardware
     // must be in authenticated bootloader mode (i.e. enterBootloader() succeeded) for any
     // of these to work.
-    public void doSomethingWhileInBootloaderMode() {
-        int							codeToRun = -1;        // select a test case
-        byte[]						data;
-
-        switch ( codeToRun ) {
-            // verify resource region
-            case 0: {
-                mFirmwareBytesVerified = 0;
-                mFirmwareData = readRawResource( R.raw.sdhm_d0_bluetooth_rsrc2_cfs );
-                mLightX.readFirmware( LightX.FirmwareRegion.Resource1,0, 0, mFirmwareData.length );
-            } break;
-
-            // verify application region
-            case 1: {
-                mFirmwareBytesVerified = 0;
-                mFirmwareData = readRawResource( R.raw.sdhm_d0_bluetooth_cfs );
-                mLightX.readFirmware( LightX.FirmwareRegion.Application,0, 0, mFirmwareData.length );
-            } break;
-
-            // write the resource region
-            case 2: {
-                data = readRawResource( R.raw.sdhm_d0_bluetooth_rsrc2_cfs );
-                Log.d("Elite150Activity first 1024 bytes of firmware to write:\n" + Debug.hexify( data, 0, 1024 ) );
-                mLightX.writeFirmware( LightX.FirmwareRegion.Resource1,0, data  );
-            } break;
-
-            // write the application region
-            case 3: {
-                data = readRawResource( R.raw.sdhm_d0_bluetooth_cfs );
-                Log.d("Elite150Activity first 1024 bytes of firmware to write:\n" + Debug.hexify( data, 0, 1024 ) );
-                mLightX.writeFirmware( LightX.FirmwareRegion.Application,0, data );
-            } break;
-
-            default: {
-                Log.d("Elite150Activity The LightX device is in bootloader mode!" );
-            } break;
-        }
-    }
+//    public void doSomethingWhileInBootloaderMode() {
+//        int							codeToRun = -1;        // select a test case
+//        byte[]						data;
+//
+//        switch ( codeToRun ) {
+//            // verify resource region
+//            case 0: {
+//                mFirmwareBytesVerified = 0;
+//                mFirmwareData = readRawResource( R.raw.sdhm_d0_bluetooth_rsrc2_cfs );
+//                mLightX.readFirmware( LightX.FirmwareRegion.Resource1,0, 0, mFirmwareData.length );
+//            } break;
+//
+//            // verify application region
+//            case 1: {
+//                mFirmwareBytesVerified = 0;
+//                mFirmwareData = readRawResource( R.raw.sdhm_d0_bluetooth_cfs );
+//                mLightX.readFirmware( LightX.FirmwareRegion.Application,0, 0, mFirmwareData.length );
+//            } break;
+//
+//            // write the resource region
+//            case 2: {
+//                data = readRawResource( R.raw.sdhm_d0_bluetooth_rsrc2_cfs );
+//                Log.d("Elite150Activity first 1024 bytes of firmware to write:\n" + Debug.hexify( data, 0, 1024 ) );
+//                mLightX.writeFirmware( LightX.FirmwareRegion.Resource1,0, data  );
+//            } break;
+//
+//            // write the application region
+//            case 3: {
+//                data = readRawResource( R.raw.sdhm_d0_bluetooth_cfs );
+//                Log.d("Elite150Activity first 1024 bytes of firmware to write:\n" + Debug.hexify( data, 0, 1024 ) );
+//                mLightX.writeFirmware( LightX.FirmwareRegion.Application,0, data );
+//            } break;
+//
+//            default: {
+//                Log.d("Elite150Activity The LightX device is in bootloader mode!" );
+//            } break;
+//        }
+//    }
 
     @Override
     public void   onClick(View view) {

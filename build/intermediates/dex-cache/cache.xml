@@ -3,6 +3,24 @@
 
     <item
         is-multidex="false"
+        jar="/Users/barbiegan/.android/build-cache/c90699bfcbf6cd7ed980fb27e92b577b58c5f658/output/jars/classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.0"
+        sha1="37371a8cdb35681fda7a807ffe7c96ccf7630b3d">
+        <dex dex="/Users/barbiegan/Documents/GANY/SDHM_AV35XX_discovery_cmdTest/app/build/intermediates/pre-dexed/debug/classes_582fb0069b5935cfe24b1410d76d9efa65676948.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/Users/barbiegan/.android/build-cache/b61e0d0a4041c7cfd465fe3c063d58deac3391be/output/jars/classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.0"
+        sha1="775aad535aaaa91693a1a001766d2d62431730df">
+        <dex dex="/Users/barbiegan/Documents/GANY/SDHM_AV35XX_discovery_cmdTest/app/build/intermediates/pre-dexed/debug/classes_fe1b8c3e64f3782d50548ac68388ff33a70b6b44.jar" />
+    </item>
+    <item
+        is-multidex="false"
         jar="/Users/barbiegan/.android/build-cache/ba950638eeea98bc4f14ec68d39a3ce2a2e9d21b/output/jars/classes.jar"
         jumboMode="false"
         optimize="true"

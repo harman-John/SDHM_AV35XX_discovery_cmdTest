@@ -5,7 +5,7 @@
  * Created by Brian Doyle on 6/27/15
  * Copyright (c) 2015 Avnera Corporation
  */
-package com.avnera.smartdigitalheadset.android.example;
+package com.avnera.test;
 
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -38,6 +38,7 @@ import com.avnera.smartdigitalheadset.LightX;
 import com.avnera.smartdigitalheadset.Log;
 import com.avnera.smartdigitalheadset.ModuleId;
 import com.avnera.smartdigitalheadset.Utility;
+import com.avnera.test.R;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -131,13 +132,30 @@ public class MainActivity extends ActionBarActivity implements
 
 		LightX.sEnablePacketDumps = true;
 		Log.d(String.format("main oncreate 1"));
+		startDiscovery();
+		Log.d(String.format("main oncreate 2"));
+	}
+
+	private void startDiscovery(){
 		try {
 			mBluetooth = new Bluetooth( this, this, true );
 			mBluetooth.start();
 		} catch ( IOException e ) {
 			showExitDialog( "Unable to enable Bluetooth." );
 		}
-		Log.d(String.format("main oncreate 2"));
+	}
+
+	private void stopDiscovery(){
+		if (mBluetooth != null) {
+			mBluetooth.close();
+			mBluetooth = null;
+		}
+	}
+
+	@Override
+	protected void onStop() {
+		super.onStop();
+
 	}
 
 	protected void initButtons() {
@@ -147,11 +165,11 @@ public class MainActivity extends ActionBarActivity implements
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 				if (mLightX != null){
-					FunctionTestSmartDigtal.getInstance().goFunction(mLightX,position);
+					FunctionTestSDHM.getInstance().goFunction(position);
 				}
 			}
 		});
-		listView.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_expandable_list_item_1,FunctionTestSmartDigtal.getInstance().initFunctionList()));
+//		listView.setAdapter(new ArrayAdapter<String>(this,R.layout.listview_item, FunctionTestSDHM.getInstance().initFunctionList()));
 		listView.setVisibility(View.GONE);
 		spin = (Spinner) findViewById(R.id.spinner1);
 		spin.setOnItemSelectedListener(MainActivity.this);
@@ -323,6 +341,7 @@ public class MainActivity extends ActionBarActivity implements
                     mLightX.close();
                     mLightX = null;
                 }
+//				stopDiscovery();
 //                mBluetooth.close();
                 openElite();
                 finish();
@@ -415,19 +434,17 @@ public class MainActivity extends ActionBarActivity implements
 		final String				kAvneraHardwareAddress = "98:5D:AD:12:28:B6";
 		Log.d("MainActivity11 bluetoothDeviceDiscovered DeviceName = "+bluetoothDevice.getName());
 		// TODO: write device-selection UI
-        if(bluetoothDevice.getName().toLowerCase().contains("150")){
+        if(bluetoothDevice.getName().toLowerCase().contains("150") ){
             if (mLightX != null) {
                 mLightX.close();
                 mLightX = null;
             }
             openElite();
             finish();
-			if (mBluetooth != null) {
-				mBluetooth.close();
-				mBluetooth = null;
-			}
+			stopDiscovery();
         }
-		else if ( bluetoothDevice.getAddress().toUpperCase().equals( kAvneraHardwareAddress ) ) {
+//		else if ( bluetoothDevice.getAddress().toUpperCase().equals( kAvneraHardwareAddress ) ) {
+		else{
 			name = bluetooth.deviceName( bluetoothDevice );
 			mHeadphoneName.setText(name);
 			Log.d("MainActivity11 Found LightX device \"" + name + "\", bond state is " + Bluetooth.bondStateDescription( bluetoothDevice.getBondState() ) );
@@ -480,7 +497,8 @@ public class MainActivity extends ActionBarActivity implements
 								ancValue.setText(" "+mANCEnabled);
 							}
 						});
-						advanceANCEnableDemo();
+//						advanceANCEnableDemo();
+						showDialog(command.value(),success,String.valueOf(mANCEnabled));
 					}
 
 				} // fall through
@@ -499,6 +517,7 @@ public class MainActivity extends ActionBarActivity implements
 							ancValue.setText(" "+ (boolValue1 ? "enabled" : "disabled") );
 						}
 					});
+					showDialog(command.value(),success,String.valueOf(ancValue));
 				} break;
 
 				case AppANCAwarenessPreset: {
@@ -523,12 +542,14 @@ public class MainActivity extends ActionBarActivity implements
 								break;
 						}
 					}
+				showDialog(command.value(),success,String.valueOf(intValue));
 
 				 break;
 
 				case AppAudioEQPreset: {
 					intValue = Utility.getInt( buffer, 0 );
 					Log.d( command + " is " + GraphicEQPreset.from( intValue ) );
+					showDialog(command.value(),success,String.valueOf(intValue));
 				} break;
 
 				case AppAwarenessRawLeft:
@@ -540,6 +561,7 @@ public class MainActivity extends ActionBarActivity implements
 							leftAwarnessValue.setText(" "+leftVal);
 						}
 					});
+					showDialog(command.value(),success,String.valueOf(unsignedIntValue));
 					break;
 				case AppAwarenessRawRight:
 					unsignedIntValue = Utility.getUnsignedInt( buffer, 0 );
@@ -551,6 +573,7 @@ public class MainActivity extends ActionBarActivity implements
 							rightAwarnessValue.setText(""+rightVal);
 						}
 					});
+					showDialog(command.value(),success,String.valueOf(unsignedIntValue));
 					break;
 				case AppAwarenessRawSteps:
 					unsignedIntValue = Utility.getUnsignedInt( buffer, 0 );
@@ -562,8 +585,9 @@ public class MainActivity extends ActionBarActivity implements
 							rawAwarnessValue.setText(""+rawVal);
 						}
 					});
+					showDialog(command.value(),success,String.valueOf(unsignedIntValue));
 					break;
-                    case AppGraphicEQCurrentPreset:
+				case AppGraphicEQCurrentPreset:
 				{
 					unsignedIntValue = Utility.getUnsignedInt( buffer, 0 );
 					Log.d( command + " is " + unsignedIntValue );
@@ -594,6 +618,7 @@ public class MainActivity extends ActionBarActivity implements
 							break;
 					}
 
+					showDialog(command.value(),success,String.valueOf(unsignedIntValue));
 
 				} break;
 
@@ -609,6 +634,7 @@ public class MainActivity extends ActionBarActivity implements
 						}
 					});
 
+					showDialog(command.value(),success,String.valueOf(unsignedIntValue) +"%");
 				} break;
 
 				case AppFirmwareVersion: {
@@ -622,6 +648,7 @@ public class MainActivity extends ActionBarActivity implements
 						}
 					});
 					Log.d( String.format( "App firmware version is %d.%d.%d", major, minor, revision ) );
+					showDialog(command.value(),success,String.format( "App firmware version is %d.%d.%d", major, minor, revision ));
 				} break;
 
 				case AppGraphicEQBand: {
@@ -680,6 +707,7 @@ public class MainActivity extends ActionBarActivity implements
 
 				default: {
 					Log.d("MainActivity11 received reply to " + command + " command" );
+					showDialog(command.value(),success,(buffer == null ? "null " : HexHelper.encodeHexStr(buffer)));
 				} break;
 			}
 		} else {
@@ -691,6 +719,7 @@ public class MainActivity extends ActionBarActivity implements
 //					boolean anc = Utility.getBoolean(buffer, 0);
 			}
 			Log.e("MainActivity11 " + "read command " + command + " failed" );
+			showDialog(command.value(),success,(buffer == null ? "null " : HexHelper.encodeHexStr(buffer)));
 		}
 	}
 
@@ -948,20 +977,20 @@ public class MainActivity extends ActionBarActivity implements
 	@Override
 	public void lightXAppWriteResult( LightX lightX, Command command, boolean success ) {
 		Log.d("MainActivity11 write " + command + " command " + ( success ? "succeeded" : "failed" ) );
-
-		if ( success ) {
-			switch ( command ) {
-				case AppANCAwarenessPreset: {
-					// confirm the value written with a read
-					mLightX.readAppANCAwarenessPreset();
-				} break;
-
-				case AppGraphicEQBand: {
-					// see call to writeAppGraphicEQBand below
-					mLightX.readAppGraphicEQBand( GraphicEQPreset.User, 1 );
-				} break;
-			}
-		}
+		showDialog(command.value(),( success == true ? "WRITE SUCCESS" : "WRITE FAIL"),"null");
+//		if ( success ) {
+//			switch ( command ) {
+//				case AppANCAwarenessPreset: {
+//					// confirm the value written with a read
+//					mLightX.readAppANCAwarenessPreset();
+//				} break;
+//
+//				case AppGraphicEQBand: {
+//					// see call to writeAppGraphicEQBand below
+//					mLightX.readAppGraphicEQBand( GraphicEQPreset.User, 1 );
+//				} break;
+//			}
+//		}
 	}
 
 	// LightX Delegate
@@ -970,6 +999,7 @@ public class MainActivity extends ActionBarActivity implements
 	public void lightXError( LightX lightX, Exception exception ) {
 		Log.e("MainActivity11 " + "LightX error: " + exception.getLocalizedMessage() );
         updateView(mHeadphoneConnected, "Light X Error");
+		showDialog(0,false,"Light X Error, Device Disconnected");
 		lightX.close();
 		mLightX = null;
 //		connect( mBluetoothDevice );
@@ -1283,5 +1313,42 @@ public class MainActivity extends ActionBarActivity implements
 	@Override
 	public void onNothingSelected(AdapterView<?> adapterView) {
 
+	}
+	private void showDialog(final int commandid, final String success, final String buffer){
+		this.runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				new AlertDialog.Builder(MainActivity.this)
+						.setTitle("Read Test Result")
+						.setMessage("CmdId: " + commandid+ " \n"
+								+ "Result: " + success + " \n"
+								+ "Value: " + buffer + " \n")
+						.setPositiveButton("Back", new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog,
+												int whichButton) {
+								dialog.dismiss();
+							}
+						}).create().show();
+			}
+		});
+	}
+
+	private void showDialog(final int commandid, final boolean success, final String buffer){
+		this.runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				new AlertDialog.Builder(MainActivity.this)
+						.setTitle("Read Test Result")
+						.setMessage("CmdId: " + commandid+ " \n"
+								+ "Result: " + (success ? "READ SUCCESS" : "READ FAILED")+ " \n"
+								+ "Value: " + buffer + " \n")
+						.setPositiveButton("Back", new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog,
+												int whichButton) {
+								dialog.dismiss();
+							}
+						}).create().show();
+			}
+		});
 	}
 }

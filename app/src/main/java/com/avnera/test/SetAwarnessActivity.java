@@ -1,9 +1,9 @@
-package com.avnera.smartdigitalheadset.android.example;
+package com.avnera.test;
 
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
 import com.avnera.av35xx.LightX;
+import com.avnera.test.R;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

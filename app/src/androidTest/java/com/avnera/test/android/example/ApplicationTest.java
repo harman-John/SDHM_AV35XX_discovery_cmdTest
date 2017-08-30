@@ -1,4 +1,4 @@
-package com.avnera.smartdigitalheadset.android.example;
+package com.avnera.test.android.example;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;
