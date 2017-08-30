@@ -169,7 +169,7 @@ public class DiscoveryActivity extends ActionBarActivity implements
                 } catch ( IOException e ) {
                     // Other device can't connected .
                     Log.e("DiscoveryActivityLog connect Failed msg: " + e.getLocalizedMessage() );
-                    showExitDialog("Can't connect "+bluetoothDevice.getName()+",Not Supported");
+                    showExitDialog("Can't connect "+bluetoothDevice.getName()+",UUID Not Supported");
                 }
             }
             break;
