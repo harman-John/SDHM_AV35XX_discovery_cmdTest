@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="function_list">
+        <item>writeAppANCEnableTrue</item>
+        <item>writeAppANCEnableFalse </item>
+        <item>readAppANCEnable</item>
+        <item>writeAppANCLevel</item>
+        <item>writeAppANCAwarenessPreset Low</item>
+        <item>writeAppANCAwarenessPreset Medium</item>
+        <item>writeAppANCAwarenessPreset High</item>
+        <item>readAppANCAwarenessPreset</item>
+        <item>readAppAwarenessRawLeft</item>
+        <item>readAppAwarenessRawRight</item>
+        <item>readAppAwarenessRawSteps</item>
+        <item>AppBatteryLevel</item>
+        <item>readAppFirmwareVersion</item>
+        <item>readAppResourceVersion not Imp</item>
+        <item>writeAppOnEarDetectionWithAutoOff</item>
+        <item>AppOnEarDetectionWithAutoOff</item>
+        <item>writeAppVoicePromptEnable</item>
+        <item>readAppVoicePromptEnable</item>
+        <item>writeAppSmartButtonFeatureIndex</item>
+        <item>readAppSmartButtonFeatureIndex</item>
+        <item>startCalibration</item>
+        <item>readCalibration</item>
+        <item>writeAppGraphicEQBand</item>
+        <item>readAppGraphicEQBand</item>
+        <item>readAppGraphicEQLimits</item>
+        <item>writeAppAudioEQPreset</item>
+        <item>readAppAudioEQPreset</item>
+        <item>readAppGraphicEQBandFreq</item>
+        <item>writeAppGraphicEQPresetBandSettings</item>
+        <item>readAppGraphicEQPresetBandSettings</item>
+        <item>writeAppGraphicEQCurrentPreset</item>
+        <item>readAppGraphicEQCurrentPreset</item>
+        <item>writeAppGraphicEQPersistPreset</item>
+        <item>writeAppGraphicEQDefaultPreset</item>
+        <item>AppGraphicEQDefaultPreset</item>
+        <item>writeAppGraphicEQFactoryResetPreset</item>
+        <item>readBootImageType</item>
+        <item>enterBootloader</item>
+        <item>enterApplication</item>
+    </string-array>
+    <string-array name="functions">
+        <item>Test Avnera lib</item>
+        <item>Use Command Test</item>
+        <item>OTA Upgrade</item>
+    </string-array>
+</resources>

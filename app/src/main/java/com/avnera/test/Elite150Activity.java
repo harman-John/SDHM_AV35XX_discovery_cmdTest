@@ -1148,14 +1148,11 @@ public class Elite150Activity extends AppCompatActivity implements
                 if (connectedMac.equals(devicesMac[0])) {
                     data = readRawResource(R.raw.akg_act_pj_rsrc2);
                     Log.d("Elite150Activity Upgrade Resource2 akg_act_pj_rsrc2 addr = 0x00145000");
-                    //mLightX.writeFirmware( LightX.FirmwareRegion.Resource2, 0x00128000, data  );
                 }else{
                     data = readRawResource(R.raw.e150_act_pj_rsrc2);
                     Log.d("Elite150Activity Upgrade Resource2 e150_act_pj_rsrc2 addr = 0x00145000");
                 }
                 mLightX.writeFirmware( LightX.FirmwareRegion.Resource2, 0x00145000, data  );
-                //Log.d("Elite150Activity LightX.FirmwareRegion.Resource2 :\n" + Debug.hexify( data, 0x00145000, 1024 ) );
-
             } break;
 
             // write the application region
@@ -1168,8 +1165,6 @@ public class Elite150Activity extends AppCompatActivity implements
                     Log.d("Elite150Activity Upgrade Resource1 e150_act_pj_rsrc1 addr = 0x00088000");
                 }
                 mLightX.writeFirmware( LightX.FirmwareRegion.Resource1, 0x00088000, data );
-                //Log.d("Elite150Activity startWritingFirmware akg_act_pj_rsrc1 :\n" + Debug.hexify( data, 0x98000, 1024 ) );
-
             } break;
             case 4: {
                 if (connectedMac.equals(devicesMac[0])) {
@@ -1181,8 +1176,6 @@ public class Elite150Activity extends AppCompatActivity implements
                 }
                 Log.d("Elite150Activity Upgrade Application e150_app addr = 0x00098000");
                 mLightX.writeFirmware( LightX.FirmwareRegion.Application, 0x00098000, data );
-                //Log.d("Elite150Activity startWritingFirmware akg_n70_app:\n" + Debug.hexify( data, 0x98000, 1024 ) );
-
             } break;
 
             case 0:

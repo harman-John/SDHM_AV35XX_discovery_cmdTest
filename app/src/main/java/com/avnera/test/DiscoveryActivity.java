@@ -23,33 +23,48 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.avnera.av35xx.Log;
 import com.avnera.smartdigitalheadset.Bluetooth;
 import com.avnera.smartdigitalheadset.LightX;
-import com.avnera.test.R;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.RunnableFuture;
 
 
 public class DiscoveryActivity extends ActionBarActivity implements
         Bluetooth.Delegate,com.avnera.av35xx.Log.Delegate
         ,com.avnera.smartdigitalheadset.Log.Delegate,View.OnClickListener {
     private Button mButtonStartDiscovery;
-    private Button mButtonCancelDiscovery;
     private Button mButtonCloseDiscovery;
     private TextView mTextView;
+    private Spinner mSpinnerFuncSelect;
     private ListView mListviewDevices;
     private List<String> list;
     private ArrayAdapter mAdapter;
     private Map<String,BluetoothDevice> mMap;
+    private LinearLayout mLinearLayoutCmdTest;
+    private EditText mEditTextSendCmd;
+    private Spinner mSpinner;
+    private Button mButtonSend;
+    private TextView mTextViewReceiveCmd;
 
+    private LinearLayout mLinearLayoutUpgrage;
+    private Button mButtonUpgrade;
+    private ProgressBar mProgressBar;
+    private TextView mTextViewUpgrage;
+    private Button mButtonEnterApp;
 
 
     private Bluetooth mBluetooth;
@@ -88,19 +103,60 @@ public class DiscoveryActivity extends ActionBarActivity implements
         }
     }
 
+    private int useCommandTest = 0;
     private void initUI() {
+        mLinearLayoutUpgrage = (LinearLayout)findViewById(R.id.linearLayout_upgrade);
+        mButtonUpgrade = (Button)findViewById(R.id.button_upgrade);
+        mButtonUpgrade.setOnClickListener(this);
+        mProgressBar = (ProgressBar) findViewById(R.id.progressbar);
+        mTextViewUpgrage = (TextView)findViewById(R.id.textview_detail);
+        mButtonEnterApp = (Button) findViewById(R.id.button_enter_app);
+        mButtonEnterApp.setOnClickListener(this);
+
+        mLinearLayoutCmdTest = (LinearLayout)findViewById(R.id.linearLayout_cmd_test);
+        mLinearLayoutCmdTest.setVisibility(View.GONE);
+        mEditTextSendCmd = (EditText)findViewById(R.id.editText_cmd);
+        mButtonSend = (Button)findViewById(R.id.button_send);
+        mButtonSend.setOnClickListener(this);
+        mTextViewReceiveCmd = (TextView)findViewById(R.id.textview_msg_received);
+        mSpinner = (Spinner)findViewById(R.id.spinner_cmd_list);
+        mSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String commd = HexHelper.encodeHexStr(Constants.Command[position]);
+                mEditTextSendCmd.setText(commd);
+                Log.d("position="+position+",id="+id);
+                mTextViewReceiveCmd.setText("");
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+        mSpinnerFuncSelect = (Spinner)findViewById(R.id.spinner_cmdtest);
+        mSpinnerFuncSelect.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                useCommandTest = position;
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
         mTextView = (TextView) findViewById(R.id.text_view_connected);
         mTextView.setVisibility(View.GONE);
         mButtonStartDiscovery = (Button) findViewById(R.id.start_discovery_button);
         mButtonStartDiscovery.setOnClickListener(this);
-        mButtonCancelDiscovery = (Button) findViewById(R.id.cancel_discovery_button);
-        mButtonCancelDiscovery.setOnClickListener(this);
         mButtonCloseDiscovery = (Button) findViewById(R.id.close_discovery_button);
         mButtonCloseDiscovery.setOnClickListener(this);
         mListviewDevices = (ListView) findViewById(R.id.discovery_device_list);
         mListviewDevices.setOnItemClickListener(onItemClickListener);
         mAdapter = new ArrayAdapter<>(this, R.layout.listview_item, getData());
         mListviewDevices.setAdapter(mAdapter);
+        mListviewDevices.setVisibility(View.VISIBLE);
     }
 
     public List<String> getData() {
@@ -118,16 +174,23 @@ public class DiscoveryActivity extends ActionBarActivity implements
             String mac = text.substring(0, 17);
             Log.d("DiscoveryActivityLog mac =" + mac);
             BluetoothDevice bluetoothDevice = mMap.get(mac);
-            if (connectedDevice == null) {
+            if (connectedDevice == null) {// Device list,select one device to connect.
                 textView.setText(textView.getText()+" Waiting...");
-                connectDevice(bluetoothDevice);
-            }else{
-//                showExitDialog("Connected");
-                if (connectedDevice.contains("150")
-                        ||connectedDevice.contains("N70")) {
-                    FunctionTestAV35.getInstance().goFunction(position);
-                }else{
-                    FunctionTestSDHM.getInstance().goFunction(position);
+                if (useCommandTest == 0) { // For Avnera lib Test.
+                    connectDevice(bluetoothDevice);
+                }else if (useCommandTest == 1){// For Command test.
+                    connectDeviceUseCommandTest(bluetoothDevice);
+                }else{// For OTA test.
+                    connectDevice(bluetoothDevice);
+                }
+            }else{// Connected, choose function to test
+                if (useCommandTest == 0) {
+                    if (connectedDevice.contains("150")
+                            || connectedDevice.contains("N70")) {
+                        FunctionTestAV35.getInstance().goFunction(position);
+                    } else {
+                        FunctionTestSDHM.getInstance().goFunction(position);
+                    }
                 }
             }
         }
@@ -181,6 +244,30 @@ public class DiscoveryActivity extends ActionBarActivity implements
         }
     }
 
+    private void connectDeviceUseCommandTest(BluetoothDevice bluetoothDevice) {
+        CommandTest.getInstance().setOnReceiveMessage(new OnReceiveListener() {
+            @Override
+            public void onReceive(final String msg) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.d(" --------- msg = " + msg);
+                        mTextViewReceiveCmd.setText(msg);
+                    }
+                });
+            }
+        });
+        try {
+            CommandTest.getInstance().connect(mBluetooth, bluetoothDevice);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        BluetoothSocket socket = CommandTest.getInstance().getSocket();
+        if (socket != null) {
+            showConnectedCmdTest(bluetoothDevice);
+        }
+    }
+
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
@@ -188,15 +275,34 @@ public class DiscoveryActivity extends ActionBarActivity implements
                 startDiscovery();
                 break;
             }
-            case R.id.cancel_discovery_button: {
-                cancelDiscovery();
-                break;
-            }
             case R.id.close_discovery_button: {
                 showDiscovery();
-                FunctionTestAV35.getInstance().unInitLightX();
-                FunctionTestSDHM.getInstance().unInitLightX();
+                if (useCommandTest == 0){
+                    FunctionTestAV35.getInstance().unInitLightX();
+                    FunctionTestSDHM.getInstance().unInitLightX();
+                }else if (useCommandTest == 1) {
+                    CommandTest.getInstance().disconnect();
+                }else if (useCommandTest == 2){
+                    FunctionTestAV35OTA.getInstance().unInitLightX();
+                    FunctionTestAV35OTA.getInstance().unInitLightX();
+                }
                 closeDiscovery();
+                break;
+            }
+            case R.id.button_send: {
+                mTextViewReceiveCmd.setText("");
+                String temp = mEditTextSendCmd.getText().toString();
+                Log.i(" temp command ="+temp);
+                byte[] bytes = HexHelper.hexStringToByteArray(temp);
+                CommandTest.getInstance().sendCommand(bytes);
+                break;
+            }
+            case R.id.button_upgrade: {
+                FunctionTestAV35OTA.getInstance().readBootImageType();
+                break;
+            }
+            case R.id.button_enter_app:{
+                FunctionTestAV35OTA.getInstance().enterApplication();
                 break;
             }
         }
@@ -205,8 +311,15 @@ public class DiscoveryActivity extends ActionBarActivity implements
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        FunctionTestAV35.getInstance().unInitLightX();
-        FunctionTestSDHM.getInstance().unInitLightX();
+        if (useCommandTest == 0){
+            FunctionTestAV35.getInstance().unInitLightX();
+            FunctionTestSDHM.getInstance().unInitLightX();
+        }else if (useCommandTest ==1) {
+            CommandTest.getInstance().disconnect();
+        }else if (useCommandTest == 2){
+            FunctionTestAV35OTA.getInstance().unInitLightX();
+            FunctionTestAV35OTA.getInstance().unInitLightX();
+        }
         closeDiscovery();
     }
 
@@ -256,14 +369,44 @@ public class DiscoveryActivity extends ActionBarActivity implements
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                showConnectedDevice(bluetoothDevice);
+                if (useCommandTest == 0) {
+                    showConnectedDevice(bluetoothDevice);
+                }else if (useCommandTest == 2){
+                    showOTAUpgrade(bluetoothDevice);
+                }
             }
         });
         if (bluetoothDevice.getName().contains("150")
+                ||bluetoothDevice.getName().contains("AV35XX")
                 ||bluetoothDevice.getName().contains("N70")) {
-            FunctionTestAV35.getInstance().initLightX(bluetoothSocket);
+            if (useCommandTest == 0) {
+                FunctionTestAV35.getInstance().initLightX(bluetoothSocket);
+            }else if (useCommandTest == 2){
+                FunctionTestAV35OTA.getInstance().initLightX(this,bluetoothDevice.getName(),bluetoothSocket);
+                FunctionTestAV35OTA.getInstance().setOnReceiveMessage(new OnReceiveListener() {
+                    @Override
+                    public void onReceive(final String msg) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mTextViewUpgrage.setText(msg);
+                                if(msg.contains(":")) {
+                                    String[] tmp = msg.split(":");
+                                    if (tmp.length>=2) {
+                                        mProgressBar.setProgress(Integer.valueOf(tmp[1].trim()));
+                                    }
+                                }
+                            }
+                        });
+                    }
+                });
+            }
         }else{
-            FunctionTestSDHM.getInstance().initLightX(bluetoothSocket);
+            if (useCommandTest == 0) {
+                FunctionTestSDHM.getInstance().initLightX(bluetoothSocket);
+            }else if (useCommandTest == 2){
+                FunctionTestSDHMOTA.getInstance().initLightX(bluetoothSocket);
+            }
         }
     }
 
@@ -277,8 +420,15 @@ public class DiscoveryActivity extends ActionBarActivity implements
                 showDiscovery();
             }
         });
-        FunctionTestAV35.getInstance().unInitLightX();
-        FunctionTestSDHM.getInstance().unInitLightX();
+        if (useCommandTest == 0){
+            FunctionTestAV35.getInstance().unInitLightX();
+            FunctionTestSDHM.getInstance().unInitLightX();
+        }else if (useCommandTest==1) {
+            CommandTest.getInstance().disconnect();
+        }else if (useCommandTest == 2){
+            FunctionTestAV35OTA.getInstance().unInitLightX();
+            FunctionTestAV35OTA.getInstance().unInitLightX();
+        }
     }
 
     private List<String> initFunctionList() {
@@ -286,13 +436,15 @@ public class DiscoveryActivity extends ActionBarActivity implements
             list = new ArrayList<>();
         }
 
-        for(int i =0;i <Constants.COMMAND_NAME.length;i++) {
-            list.add((i+1) + Constants.COMMAND_NAME[i]);
+        String[] cmdName = getResources().getStringArray(R.array.function_list);
+        for(int i =0;i <cmdName.length;i++) {
+            list.add((i+1) + cmdName[i]);
         }
         return list;
     }
 
     private void showConnectedDevice(BluetoothDevice bluetoothDevice){
+        mSpinnerFuncSelect.setVisibility(View.GONE);
         mButtonStartDiscovery.setVisibility(View.GONE);
         mTextView.setVisibility(View.VISIBLE);
         SpannableStringBuilder builder = new SpannableStringBuilder();
@@ -303,19 +455,60 @@ public class DiscoveryActivity extends ActionBarActivity implements
         builder.setSpan(span, 0, 10, Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
         mTextView.setText(builder);
         connectedDevice = bluetoothDevice.getName();
-        mButtonCancelDiscovery.setVisibility(View.GONE);
         list.clear();
         initFunctionList();
         mAdapter.notifyDataSetChanged();
+        mLinearLayoutCmdTest.setVisibility(View.GONE);
+        mListviewDevices.setVisibility(View.VISIBLE);
+        mLinearLayoutUpgrage.setVisibility(View.GONE);
+    }
+
+    private void showConnectedCmdTest(BluetoothDevice bluetoothDevice){
+        mSpinnerFuncSelect.setVisibility(View.GONE);
+        mButtonStartDiscovery.setVisibility(View.GONE);
+        mTextView.setVisibility(View.VISIBLE);
+        SpannableStringBuilder builder = new SpannableStringBuilder();
+        builder.append("Connected:\n");
+        builder.append(bluetoothDevice.getAddress());
+        builder.append("(" + bluetoothDevice.getName() + ")");
+        ForegroundColorSpan span = new ForegroundColorSpan(Color.rgb(254, 58, 54));
+        builder.setSpan(span, 0, 10, Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
+        mTextView.setText(builder);
+        connectedDevice = bluetoothDevice.getName();
+        mListviewDevices.setVisibility(View.GONE);
+        mLinearLayoutCmdTest.setVisibility(View.VISIBLE);
+        mLinearLayoutUpgrage.setVisibility(View.GONE);
+    }
+
+    private void showOTAUpgrade(BluetoothDevice bluetoothDevice){
+        mTextViewUpgrage.setText("");
+        mProgressBar.setProgress(0);
+        mSpinnerFuncSelect.setVisibility(View.GONE);
+        mButtonStartDiscovery.setVisibility(View.GONE);
+        mTextView.setVisibility(View.VISIBLE);
+        SpannableStringBuilder builder = new SpannableStringBuilder();
+        builder.append("Connected:\n");
+        builder.append(bluetoothDevice.getAddress());
+        builder.append("(" + bluetoothDevice.getName() + ")");
+        ForegroundColorSpan span = new ForegroundColorSpan(Color.rgb(254, 58, 54));
+        builder.setSpan(span, 0, 10, Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
+        mTextView.setText(builder);
+        connectedDevice = bluetoothDevice.getName();
+        mLinearLayoutCmdTest.setVisibility(View.GONE);
+        mListviewDevices.setVisibility(View.GONE);
+        mLinearLayoutUpgrage.setVisibility(View.VISIBLE);
     }
 
     private void showDiscovery(){
+        mSpinnerFuncSelect.setVisibility(View.VISIBLE);
         mButtonStartDiscovery.setVisibility(View.VISIBLE);
         mTextView.setVisibility(View.GONE);
-        mButtonCancelDiscovery.setVisibility(View.VISIBLE);
         list.clear();
         connectedDevice = null;
         mAdapter.notifyDataSetChanged();
+        mLinearLayoutCmdTest.setVisibility(View.GONE);
+        mListviewDevices.setVisibility(View.VISIBLE);
+        mLinearLayoutUpgrage.setVisibility(View.GONE);
     }
 
     public void showExitDialog(String message) {
